@@ -21,7 +21,7 @@ class App {
 
   init() {
     this.ui.build();
-    this.ui.showTab('forest');
+    this.ui.showTab('tree');
     this.playBtn.addEventListener('click', () => this.togglePlay());
     document.getElementById('rain').addEventListener('click', () => this.withAudio(() => this.forest.startRain(10)));
     document.getElementById('gust').addEventListener('click', () => this.withAudio(() => this.forest.gustNow(1.4)));
@@ -70,8 +70,7 @@ class App {
     if (!(await this.ensureAudio())) return;
     this.forest.playing = true;
     this.forest.gustNext = this.audio.now + 2.5;
-    this.playBtn.textContent = 'Stop';
-    this.playBtn.setAttribute('aria-pressed', 'true');
+    this.setPlayButton(true);
     this.requestWakeLock();
   }
 
@@ -79,9 +78,14 @@ class App {
     this.forest.playing = false;
     this.audio.panic();
     this.forest.leaves = [];
-    this.playBtn.textContent = 'Play';
-    this.playBtn.setAttribute('aria-pressed', 'false');
+    this.setPlayButton(false);
     if (this.wakeLock) { this.wakeLock.release().catch(() => {}); this.wakeLock = null; }
+  }
+
+  setPlayButton(on) {
+    this.playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    this.playBtn.setAttribute('aria-label', on ? 'Stop' : 'Play');
+    this.playBtn.querySelector('.play-label').textContent = on ? 'Stop' : 'Play';
   }
 
   togglePlay() { if (this.forest.playing) this.stop(); else this.play(); }
@@ -126,7 +130,7 @@ class App {
       parts.push(`${n} ${n === 1 ? 'leaf' : 'leaves'} sounding`);
       parts.push(`litter ${mass.toFixed(1)}`);
       if (this.audio.rain > 0.05) parts.push('raining');
-    } else parts.push('Press play. The wind decides the rhythm.');
+    } else parts.push('The wind sets the rhythm');
     const txt = parts.join(' · ');
     if (this.statusEl.textContent !== txt) this.statusEl.textContent = txt;
   }

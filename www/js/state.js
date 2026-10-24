@@ -2,38 +2,45 @@
 import { speciesDefaults, SCALES } from './species.js';
 
 export const GLOBAL_PARAMS = [
-  { group: 'Time and climate', items: [
-    { key: 'spy', label: 'Seconds per year', min: 0.25, max: 8, step: 0.05, unit: 's' },
+  { group: 'Time', items: [
+    { key: 'spy', label: 'Year length', min: 0.25, max: 8, step: 0.05, unit: 's', hint: 'Seconds of sound per year of decay' },
     { key: 'temp', label: 'Temperature', min: 0, max: 25, step: 0.5, unit: '°C', hint: 'Decay roughly doubles every 10 °C' },
     { key: 'priming', label: 'Priming', min: 0, max: 1, step: 0.01, hint: 'More litter on the ground speeds up all decay' },
-    { key: 'rainChance', label: 'Rain chance', min: 0, max: 1, step: 0.01, hint: 'Rain leaches the leaves and brightens every note' }
+    { key: 'rainChance', label: 'Rain', min: 0, max: 1, step: 0.01, hint: 'How often showers come. Rain leaches leaves and brightens every note' }
   ] },
   { group: 'Wind', items: [
     { key: 'wind', label: 'Wind', min: 0, max: 2, step: 0.01 },
-    { key: 'gustStrength', label: 'Gust strength', min: 1, max: 10, step: 0.1, unit: '×' },
-    { key: 'gustEvery', label: 'Gust spacing', min: 1, max: 20, step: 0.5, unit: 's' },
-    { key: 'regrow', label: 'Regrow', min: 1, max: 30, step: 0.5, unit: 's' }
+    { key: 'gustStrength', label: 'Gust force', min: 1, max: 10, step: 0.1, unit: '×' },
+    { key: 'gustEvery', label: 'Gust gap', min: 1, max: 20, step: 0.5, unit: 's' },
+    { key: 'regrow', label: 'Regrow', min: 1, max: 30, step: 0.5, unit: 's', hint: 'How long a bare twig waits for a new leaf' }
   ] },
   { group: 'Ground', items: [
-    { key: 'groundBed', label: 'Litter rustle', min: 0, max: 1, step: 0.01 },
+    { key: 'groundBed', label: 'Rustle', min: 0, max: 1, step: 0.01 },
     { key: 'crackle', label: 'Crackle', min: 0, max: 1, step: 0.01 },
-    { key: 'windNoise', label: 'Wind sound', min: 0, max: 1, step: 0.01 }
+    { key: 'windNoise', label: 'Wind sound', min: 0, max: 1, step: 0.01 },
+    { key: 'absorption', label: 'Damping', min: 0, max: 1, step: 0.01, hint: 'Piled-up leaves soften the reverb' }
   ] },
   { group: 'Space', items: [
     { key: 'reverbSize', label: 'Reverb size', min: 0.5, max: 8, step: 0.1, unit: 's' },
-    { key: 'reverbMix', label: 'Reverb level', min: 0, max: 1, step: 0.01 },
-    { key: 'absorption', label: 'Litter damping', min: 0, max: 1, step: 0.01, hint: 'Piled-up leaves soften the reverb' },
+    { key: 'reverbMix', label: 'Reverb', min: 0, max: 1, step: 0.01 },
     { key: 'master', label: 'Volume', min: 0, max: 1, step: 0.01 }
   ] },
-  { group: 'Tuning', items: [
-    { key: 'root', label: 'Root note', min: 28, max: 64, step: 1, int: true, note: true },
-    { key: 'scale', label: 'Scale', options: Object.keys(SCALES) }
-  ] },
-  { group: 'Performance', items: [
-    { key: 'maxVoices', label: 'Voice limit', min: 8, max: 48, step: 4, int: true, hint: 'Lower this if the sound crackles' },
-    { key: 'columns', label: 'Columns', options: [8, 12, 16] }
+  { group: 'Setup', items: [
+    { key: 'root', label: 'Root', min: 28, max: 64, step: 1, int: true, note: true, stepper: true },
+    { key: 'scale', label: 'Scale', options: Object.keys(SCALES) },
+    { key: 'columns', label: 'Columns', options: [8, 12, 16], seg: true },
+    { key: 'maxVoices', label: 'Voices', min: 8, max: 48, step: 4, int: true, hint: 'Lower this if the sound crackles' }
   ] }
 ];
+
+export const PRESET_NOTES = {
+  'Park in October': 'Six mixed trees, light wind',
+  'Pine stand': 'Slow drones, cold and dark',
+  'Rain garden': 'Fast leaves and frequent showers',
+  'Glass orchard': 'Bright partials in a big room',
+  'Windstorm': 'Dense gusts across twelve columns',
+  'Slow rot': 'Long lags, cold ground, years per phrase'
+};
 
 export const DEFAULT_GLOBALS = {
   spy: 1.5, temp: 10, priming: 0.3, rainChance: 0.15,

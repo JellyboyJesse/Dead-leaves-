@@ -106,17 +106,10 @@ export class Scene {
 
     // ground
     const gy = this.groundY;
-    cx.fillStyle = this.groundCol;
-    cx.globalAlpha = 0.12 + Math.min(0.25, this.audio.mass / 40);
-    cx.fillRect(0, gy + 4, W, H - gy - 4);
-    cx.globalAlpha = 1;
     cx.strokeStyle = this.groundCol; cx.lineWidth = 1;
-    cx.beginPath(); cx.moveTo(0, gy + 4.5); cx.lineTo(W, gy + 4.5); cx.stroke();
+    cx.beginPath(); cx.moveTo(0, gy + 6.5); cx.lineTo(W, gy + 6.5); cx.stroke();
 
-    // canopy: a faint branch per row, hanging leaves and bare twigs
-    cx.strokeStyle = this.twig; cx.lineWidth = 1; cx.globalAlpha = 0.22;
-    for (let r = 0; r < 6; r++) { const y = this.rowY(r) - 7; cx.beginPath(); cx.moveTo(4, y); cx.lineTo(W - 4, y); cx.stroke(); }
-    cx.globalAlpha = 1;
+    // canopy: hanging leaves and bare twigs
     for (let r = 0; r < 6; r++) {
       const slot = st.slots[r], col = hexToRgb((LIBRARY[slot.type] || LIBRARY.linden).color);
       for (let c = 0; c < f.cols; c++) {
@@ -128,7 +121,7 @@ export class Scene {
           this.drawLeaf(slot.type, x, y, Math.PI / 2 + sway + 0.3 * wind, 8, col, 1, 0.5);
         } else {
           cx.fillStyle = this.twig; cx.globalAlpha = 0.5;
-          cx.beginPath(); cx.arc(x, y - 6, 1.6, 0, Math.PI * 2); cx.fill();
+          cx.beginPath(); cx.arc(x, y - 7, 1.5, 0, Math.PI * 2); cx.fill();
           cx.globalAlpha = 1;
         }
       }

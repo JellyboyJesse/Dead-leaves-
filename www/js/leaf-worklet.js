@@ -117,7 +117,7 @@ class Voice {
     this.kl = p.leach; this.kc = p.kc; this.kr = p.kr;
     this.ta = Math.max(0, p.fall) / 12; // months -> years
     this.tl = Math.max(0, p.lag) / 12;
-    this.wl = Math.max(0.02, this.tl / 4);
+    this.wl = 0.03 + this.tl * 0.08;
     this.E = 1; this.att = this.ta > 0 ? 0 : 1;
     this.amp = 0; this.ampT = 0; this.br = this.brightP; this.tailA = 0; this.tailT = 0;
     this.sagMul = 1;
