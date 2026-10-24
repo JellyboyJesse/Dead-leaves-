@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#fff">
+<canvas id="c" width="1300" height="1500"></canvas>
+<script type="module">
+import { leafSprites, drawLeafArt } from '../www/js/leafart.js';
+import { LIBRARY } from '../www/js/species.js';
+const cx = document.getElementById('c').getContext('2d');
+cx.font = '14px sans-serif';
+const types = Object.keys(LIBRARY);
+types.forEach((t, i) => {
+  const y = 60 + i * 120, col = LIBRARY[t].color;
+  cx.fillStyle = '#333'; cx.fillText(t, 10, y);
+  const states = [{}, { tumble: -0.7 }, { soft: 1, brown: 0.5, veins: 1 }, { soft: 0.6, brown: 1, veins: 1 }, { soft: 0.35, brown: 1, veins: 1 }, { soft: 0.12, brown: 1, veins: 1 }, { soft: 0, brown: 1, veins: 1 }];
+  states.forEach((s, j) => drawLeafArt(cx, t, col, 170 + j * 160, y, 0, 55, s));
+});
+window.done = true;
+</script>
