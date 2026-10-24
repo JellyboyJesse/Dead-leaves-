@@ -16,9 +16,9 @@ function sin01(ph) {
   return SINE[i] + (SINE[i + 1] - SINE[i]) * f;
 }
 
-const ENGINES = ['bell', 'pluck', 'rustle', 'glass', 'wood', 'drone', 'grain'];
+const ENGINES = ['bell', 'pluck', 'rustle', 'glass', 'wood', 'drone', 'grain', 'sample'];
 // Loudness balance between engines (tuned by ear and by the RMS test)
-const ENGINE_GAIN = [0.42, 3.0, 5.0, 0.6, 3.5, 0.68, 1.05];
+const ENGINE_GAIN = [0.42, 3.0, 5.0, 0.6, 3.5, 0.68, 1.05, 1.8];
 const TAILS = ['none', 'sub', 'earth', 'metal'];
 const MAX_POLY = 48;
 const KS_SIZE = 8192;
@@ -90,8 +90,10 @@ class Voice {
     for (let i = 0; i < 12; i++) this.grains.push({ on: false, ph: 0, inc: 0, pos: 0, len: 1, amp: 0 });
   }
 
-  start(n, sr, offset) {
+  start(n, sr, offset, samples) {
     const p = n.p;
+    this.sample = (samples && p.sampleKey && samples.get(p.sampleKey)) || null;
+    this.scan = 0;
     this.active = true;
     this.id = n.id;
     this.delay = offset;
@@ -156,6 +158,7 @@ class LeafProcessor extends AudioWorkletProcessor {
     this.voices = [];
     for (let i = 0; i < MAX_POLY; i++) this.voices.push(new Voice(i));
     this.queue = [];
+    this.samples = new Map();
     this.g = {
       spy: 1.5, temp: 10, priming: 0.3, groundBed: 0.5, crackle: 0.5, windNoise: 0.4,
       maxVoices: 24, wind: 0.3, rainDur: 8
@@ -185,6 +188,8 @@ class LeafProcessor extends AudioWorkletProcessor {
     } else if (m.type === 'rain') {
       this.rainTarget = Math.min(1, m.amount);
       this.rainLeft = m.dur;
+    } else if (m.type === 'sample') {
+      if (m.data) this.samples.set(m.key, { data: m.data, rate: m.rate || this.sr }); else this.samples.delete(m.key);
     } else if (m.type === 'panic') {
       this.queue.length = 0;
       for (const v of this.voices) if (v.active) { v.killing = true; v.fadeStep = 1 / 256; }
@@ -205,7 +210,7 @@ class LeafProcessor extends AudioWorkletProcessor {
       }
       if (free && count < this.g.maxVoices) {
         const offset = Math.max(0, Math.min(127, Math.round((n.when - now) * sr)));
-        free.start(n, sr, offset);
+        free.start(n, sr, offset, this.samples);
         this.queue.shift();
       } else {
         // steal the quietest voice with a short fade; the note waits a block or two
@@ -463,6 +468,44 @@ class LeafProcessor extends AudioWorkletProcessor {
         }
         break;
       }
+      case 7: { // sample: grains from a recording; the read point drifts through it as the leaf decays
+        const smp = v.sample;
+        if (!smp) { v.engine = 6; this.renderEngine(v, f, buf, start, N); v.engine = 7; break; }
+        const data = smp.data, len = data.length;
+        const grainLen = Math.max(64, (0.02 + body * 0.32) * sr);
+        const rate = (f / 261.63) * (smp.rate / sr);
+        const spawn = 3.5 / grainLen; // about three or four grains overlapping
+        const centre = (ch + 0.6 * (1 - Math.min(1, v.E))) % 1;
+        const grains = v.grains;
+        for (let i = start; i < N; i++) buf[i] = 0;
+        for (let i = start; i < N; i++) {
+          if (rng.next() >= spawn) continue;
+          for (const gr of grains) {
+            if (gr.on) continue;
+            const posFrac = (centre + rng.bi() * (0.01 + 0.05 * (1 - br)) + 1) % 1;
+            gr.on = true; gr.pos = -(i - start); gr.len = grainLen * (0.8 + 0.4 * rng.next());
+            gr.ph = posFrac * len; gr.inc = rate * (1 + rng.bi() * 0.003); gr.amp = 0.45;
+            break;
+          }
+        }
+        for (const gr of grains) {
+          if (!gr.on) continue;
+          const winInc = 0.5 / gr.len;
+          let pos = gr.pos, p = gr.ph;
+          for (let i = start; i < N; i++) {
+            if (pos < 0) { pos++; continue; }
+            const w = sin01(pos * winInc);
+            let k = p % len; if (k < 0) k += len;
+            const ki = k | 0, fr = k - ki;
+            const a = data[ki], b = data[ki + 1 < len ? ki + 1 : 0];
+            buf[i] += (a + (b - a) * fr) * w * w * gr.amp;
+            p += gr.inc;
+            if (++pos >= gr.len) { gr.on = false; break; }
+          }
+          gr.pos = pos; gr.ph = p;
+        }
+        break;
+      }
       default: buf.fill(0, start, N);
     }
   }
@@ -550,3 +593,40 @@ class LeafProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor('leaf-processor', LeafProcessor);
+
+// Passes audio straight through and, while recording, sends copies to the page.
+class TapProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.on = false; this.size = 8192; this.fill = 0;
+    this.L = new Float32Array(this.size); this.R = new Float32Array(this.size);
+    this.port.onmessage = (e) => {
+      if (e.data.type === 'start') { this.on = true; this.fill = 0; }
+      if (e.data.type === 'stop') { this.flush(); this.on = false; this.port.postMessage({ type: 'stopped' }); }
+    };
+  }
+  flush() {
+    if (!this.fill) return;
+    const l = this.L.slice(0, this.fill), r = this.R.slice(0, this.fill);
+    this.port.postMessage({ type: 'chunk', l, r }, [l.buffer, r.buffer]);
+    this.fill = 0;
+  }
+  process(inputs, outputs) {
+    const inp = inputs[0], out = outputs[0];
+    const il = inp[0], ir = inp[1] || inp[0];
+    const n = out[0].length;
+    for (let c = 0; c < out.length; c++) {
+      const src = c === 0 ? il : ir;
+      if (src) out[c].set(src); else out[c].fill(0);
+    }
+    if (this.on && il) {
+      for (let i = 0; i < n; i++) {
+        this.L[this.fill] = il[i]; this.R[this.fill] = ir[i];
+        if (++this.fill >= this.size) this.flush();
+      }
+    }
+    return true;
+  }
+}
+
+registerProcessor('tap-processor', TapProcessor);

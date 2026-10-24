@@ -11,19 +11,24 @@ let registered = null;
 globalThis.sampleRate = SR;
 globalThis.currentTime = 0;
 globalThis.AudioWorkletProcessor = class { constructor() { this.port = { postMessage: (m) => { this.lastState = m; }, onmessage: null }; } };
-globalThis.registerProcessor = (name, cls) => { registered = cls; };
+globalThis.registerProcessor = (name, cls) => { if (name === 'leaf-processor') registered = cls; };
 const src = fs.readFileSync(path.join(here, '../www/js/leaf-worklet.js'), 'utf8');
 new Function(src)();
 
-const ENGINES = ['bell', 'pluck', 'rustle', 'glass', 'wood', 'drone', 'grain'];
+const ENGINES = ['bell', 'pluck', 'rustle', 'glass', 'wood', 'drone', 'grain', 'sample'];
 const base = {
   freq: 220, vel: 1, level: 0.8, send: 0.3, pan: 0, character: 0.4, brightness: 0.7, body: 0.5,
-  tone: 9000, drive: 0.1, impact: 0.4, crunch: 0.3, tail: 'sub', tailLevel: 0.5, sag: 0.5,
+  sampleKey: 'test', tone: 9000, drive: 0.1, impact: 0.4, crunch: 0.3, tail: 'sub', tailLevel: 0.5, sag: 0.5,
   soluble: 20, lignin: 20, leach: 15, kc: 1.5, kr: 0.15, fall: 1, lag: 2
 };
 
+// A test recording: a decaying chord with some noise, 2 s
+const SAMPLE = new Float32Array(SR * 2);
+for (let i = 0; i < SAMPLE.length; i++) { const t = i / SR; SAMPLE[i] = (Math.sin(2 * Math.PI * 261.63 * t) + 0.5 * Math.sin(2 * Math.PI * 392 * t)) * 0.5 * Math.exp(-t) + (Math.random() - 0.5) * 0.05; }
+
 function render(params, seconds, globals = {}, extra = () => {}) {
   const p = new registered();
+  p.onMessage({ type: 'sample', key: 'test', data: SAMPLE, rate: SR });
   p.onMessage({ type: 'globals', g: { spy: 1.5, wind: 0, groundBed: 0, crackle: 0, windNoise: 0, ...globals } });
   p.onMessage({ type: 'note', id: 1, when: 0.01, p: params });
   const blocks = Math.ceil(seconds * SR / 128);

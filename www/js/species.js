@@ -9,7 +9,8 @@ export const ENGINES = [
   { id: 'glass', label: 'Glass', character: 'Stretch', body: 'Partials' },
   { id: 'wood', label: 'Wood', character: 'Bar–drum', body: 'Ring' },
   { id: 'drone', label: 'Drone', character: 'Detune', body: 'Sub' },
-  { id: 'grain', label: 'Grain', character: 'Density', body: 'Size' }
+  { id: 'grain', label: 'Grain', character: 'Density', body: 'Size' },
+  { id: 'sample', label: 'Sample', character: 'Position', body: 'Grain size' }
 ];
 
 export const TAILS = [

@@ -61,7 +61,7 @@ export class Scene {
 
   get groundY() { return this.H - 30; }
   rowGap() { return Math.min(17, (this.H * 0.38) / 6); }
-  rowY(r) { return 22 + r * this.rowGap(); }
+  rowY(r) { return (this.forest.season ? 36 : 22) + r * this.rowGap(); }
   colX(c) { return ((c + 0.5) / this.forest.cols) * this.W; }
 
   // Which hanging leaf, if any, is under a tap
@@ -108,6 +108,18 @@ export class Scene {
     const gy = this.groundY;
     cx.strokeStyle = this.groundCol; cx.lineWidth = 1;
     cx.beginPath(); cx.moveTo(0, gy + 6.5); cx.lineTo(W, gy + 6.5); cx.stroke();
+
+    // the seasonal year, as a thin line across the top
+    if (f.season) {
+      const p = f.season.phase, x0 = 10, x1 = W - 10, y = 9;
+      cx.strokeStyle = this.groundCol; cx.lineWidth = 2; cx.lineCap = 'round';
+      cx.beginPath(); cx.moveTo(x0, y); cx.lineTo(x1, y); cx.stroke();
+      cx.strokeStyle = this.ink; cx.beginPath(); cx.moveTo(x0, y); cx.lineTo(x0 + (x1 - x0) * p, y); cx.stroke();
+      cx.fillStyle = this.ink;
+      for (let k = 1; k < 4; k++) { cx.beginPath(); cx.arc(x0 + ((x1 - x0) * k) / 4, y, 1.5, 0, Math.PI * 2); cx.fill(); }
+      cx.font = '11px system-ui, sans-serif'; cx.textAlign = 'right'; cx.fillText(f.season.name, x1, y + 15);
+      cx.lineCap = 'butt';
+    }
 
     // canopy: hanging leaves and bare twigs
     for (let r = 0; r < 6; r++) {

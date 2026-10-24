@@ -11,6 +11,9 @@ All sound runs in one AudioWorklet (`www/js/leaf-worklet.js`).
 - **Lignin tail layer:** none, sub octave, earth rumble or metal ring.
 - **Each leaf is different:** size and water content shift pitch, brightness and envelope; position sets stereo pan; scale-degree wander.
 - **The ground plays too:** litter rustle and crackle scale with how much is on the ground, wind is audible, rain leaches and brightens every ringing note, and priming speeds decay as litter builds up.
+- **Seasons:** an optional year cycle. Spring regrows the canopy, autumn drops it, winter leaves the long tail; wind, looseness, temperature and rain follow it.
+- **Sample engine:** load a recording, or reuse a take, and its grains drift through the sound as the leaf decays.
+- **Record:** capture the output as a WAV. In the app, Save opens the Android share sheet.
 - **Space:** a generated reverb whose high end is damped by the litter, then a limiter.
 
 ## Running it
@@ -31,6 +34,7 @@ All sound runs in one AudioWorklet (`www/js/leaf-worklet.js`).
 - `www/js/forest.js`: canopy, wind, gusts, rain and building each leaf's note
 - `www/js/scene.js`: drawing
 - `www/js/ui.js`: grid and editors
-- `www/js/audio.js`: audio graph
+- `www/js/audio.js`: audio graph, recording and WAV export
+- `www/js/samples.js`: recorded sounds for the Sample engine, kept in IndexedDB
 
 Decay rates are plausible ballparks for temperate leaf litter, tuned for sound rather than fitted to data.

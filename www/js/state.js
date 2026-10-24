@@ -6,7 +6,10 @@ export const GLOBAL_PARAMS = [
     { key: 'spy', label: 'Year length', min: 0.25, max: 8, step: 0.05, unit: 's', hint: 'Seconds of sound per year of decay' },
     { key: 'temp', label: 'Temperature', min: 0, max: 25, step: 0.5, unit: '°C', hint: 'Decay roughly doubles every 10 °C' },
     { key: 'priming', label: 'Priming', min: 0, max: 1, step: 0.01, hint: 'More litter on the ground speeds up all decay' },
-    { key: 'rainChance', label: 'Rain', min: 0, max: 1, step: 0.01, hint: 'How often showers come. Rain leaches leaves and brightens every note' }
+    { key: 'rainChance', label: 'Rain', min: 0, max: 1, step: 0.01, hint: 'How often showers come. Rain leaches leaves and brightens every note' },
+    { key: 'seasons', label: 'Seasons', options: ['Off', 'On'], seg: true, bool: true },
+    { key: 'seasonMinutes', label: 'Season year', min: 1, max: 20, step: 0.5, unit: 'min', hint: 'Spring regrows the canopy, autumn drops it, winter is the long tail', showIf: 'seasons' },
+    { key: 'jump', label: 'Jump to', jump: true, showIf: 'seasons' }
   ] },
   { group: 'Wind', items: [
     { key: 'wind', label: 'Wind', min: 0, max: 2, step: 0.01 },
@@ -43,7 +46,7 @@ export const PRESET_NOTES = {
 };
 
 export const DEFAULT_GLOBALS = {
-  spy: 1.5, temp: 10, priming: 0.3, rainChance: 0.15,
+  spy: 1.5, temp: 10, priming: 0.3, rainChance: 0.15, seasons: false, seasonMinutes: 4,
   wind: 0.8, gustStrength: 5, gustEvery: 5, regrow: 6,
   groundBed: 0.5, crackle: 0.4, windNoise: 0.35,
   reverbSize: 3.2, reverbMix: 0.35, absorption: 0.5, master: 0.8,

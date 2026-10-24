@@ -34,7 +34,8 @@ const GLYPHS = {
   glass: 'M5 13V3M10 13V6M15 13V2M20 13V8M25 13V10',
   wood: 'M1 7H6L8 2L10 12L12 4L14 9L16 6L18 8H29',
   drone: 'M1 12L8 2V12L15 2V12L22 2V12L29 2',
-  grain: 'M3 8h.5M7 4h.5M10 10h.5M14 6h.5M17 2h.5M20 9h.5M24 5h.5M27 11h.5'
+  grain: 'M3 8h.5M7 4h.5M10 10h.5M14 6h.5M17 2h.5M20 9h.5M24 5h.5M27 11h.5',
+  sample: 'M1 7h4M5 7l2-5 2 10 2-8 2 6 2-3h2M19 4v6M22 2v10M25 5v4M28 6v2'
 };
 const LEAF_GLYPH = 'M3 15C3 7 8 3 15 3C15 10 11 15 3 15Z';
 
@@ -71,7 +72,7 @@ function row(def, obj, onChange, labelText) {
   const r = el('div', { class: 'row' }, el('label', { for: id, text: labelText || def.label }), input, out);
   const frag = document.createDocumentFragment();
   frag.append(r);
-  if (def.hint) frag.append(el('div', { class: 'row', 'aria-hidden': 'true' }, el('span'), el('span', { class: 'row-hint', text: def.hint })));
+  if (def.hint) frag.append(el('div', { class: 'row hint-row', 'aria-hidden': 'true' }, el('span'), el('span', { class: 'row-hint', text: def.hint })));
   r.refresh = refresh;
   return frag;
 }
@@ -215,14 +216,15 @@ export class UI {
     const typeSel = el('select', { id: 'tree-type', 'aria-label': 'Tree species' });
     for (const [k, v] of Object.entries(LIBRARY)) { const o = el('option', { value: k, text: v.name }); if (k === slot.type) o.selected = true; typeSel.append(o); }
     typeSel.addEventListener('change', () => {
-      this.state.slots[r] = { ...speciesDefaults(typeSel.value), degree: slot.degree, octave: slot.octave };
+      this.state.slots[r] = { ...speciesDefaults(typeSel.value), degree: slot.degree, octave: slot.octave, sampleKey: slot.sampleKey, sampleName: slot.sampleName };
       this.buildGrid(); this.renderTree(); this.app.changed();
     });
     card.append(el('div', { class: 'card-head' },
       el('div', { class: 'swatch' }, svg('0 0 18 18', LEAF_GLYPH)),
       el('div', { class: 'species-select' }, typeSel),
       el('div', { class: 'card-actions' },
-        el('button', { text: 'Reset', title: 'Back to this tree’s defaults', onclick: () => { this.state.slots[r] = { ...speciesDefaults(slot.type), degree: slot.degree, octave: slot.octave }; this.afterChange(true); } }),
+        el('button', { text: 'Vary', title: 'Nudge every sound and envelope setting a little', onclick: () => { this.vary(slot); this.afterChange(false); } }),
+        el('button', { text: 'Reset', title: 'Back to this tree’s defaults', onclick: () => { this.state.slots[r] = { ...speciesDefaults(slot.type), degree: slot.degree, octave: slot.octave, sampleKey: slot.sampleKey, sampleName: slot.sampleName }; this.afterChange(true); } }),
         el('button', { class: 'btn-ink', text: 'Play', 'aria-label': `Play one ${lib.name.toLowerCase()} leaf`, onclick: () => this.app.audition(r) }))));
 
     const engines = el('div', { class: 'engines', role: 'group', 'aria-label': 'Sound engine' });
@@ -231,9 +233,6 @@ export class UI {
         onclick: () => { slot.engine = e.id; this.renderTree(); this.app.changed(); } },
         svg('0 0 30 14', GLYPHS[e.id], e.id === 'grain' ? 'dots' : ''), el('span', { text: e.label })));
     }
-    // eighth cell: vary
-    engines.append(el('button', { class: 'engine', title: 'Nudge every sound and envelope setting a little', onclick: () => { this.vary(slot); this.afterChange(false); } },
-      svg('0 0 30 14', 'M3 10C8 10 8 4 13 4S18 10 23 10M23 10l-3-3M23 10l3-3'), el('span', { text: 'Vary' })));
     card.append(engines);
 
     const secs = ['Envelope', 'Sound', 'Pitch', 'Leaf'];
@@ -271,6 +270,7 @@ export class UI {
       requestAnimationFrame(() => this.drawEnvelope());
       return;
     }
+    if (grp.group === 'Sound' && slot.engine === 'sample') body.append(this.sampleRow(slot));
     if (grp.group === 'Sound') {
       body.append(el('div', { class: 'row row-wide' }, el('span', { class: 'lbl', text: 'Tail layer' }),
         seg(TAILS.map((t) => ({ value: t.id, label: t.label })), slot.tail, (v) => { slot.tail = v; this.app.changed(); }, 'Tail layer')));
@@ -285,6 +285,22 @@ export class UI {
         body.append(row(def, slot, onChange, label));
       }
     }
+  }
+
+  sampleRow(slot) {
+    const input = el('input', { type: 'file', accept: 'audio/*', hidden: true, id: 'sample-file' });
+    const name = el('span', { class: 'sname' + (slot.sampleName ? '' : ' none'), text: slot.sampleName || 'No recording yet. Until you add one, it plays grains.' });
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      name.textContent = 'Loading…'; name.classList.remove('none');
+      const ok = await this.app.loadSampleFile(this.selected, file);
+      if (!ok) { name.textContent = 'That file could not be read. Try a WAV, MP3 or M4A.'; return; }
+      this.renderTree();
+    });
+    return el('div', { class: 'sample-row' }, name, input,
+      el('button', { text: slot.sampleName ? 'Replace' : 'Choose file', onclick: () => input.click() }),
+      slot.sampleName ? el('button', { text: 'Remove', onclick: () => { this.app.clearSample(this.selected); this.renderTree(); } }) : null);
   }
 
   noteLabel(slot) {
@@ -464,11 +480,26 @@ export class UI {
     const g = this.state.globals;
     const grp = GLOBAL_PARAMS.find((x) => x.group === this.forestSec);
     for (const def of grp.items) {
-      if (def.stepper) {
+      if (def.showIf && !g[def.showIf]) continue;
+      if (def.jump) {
+        body.append(el('div', { class: 'row row-wide' }, el('span', { class: 'lbl', text: def.label }),
+          seg(['Spring', 'Summer', 'Autumn', 'Winter'].map((n, i) => ({ value: i, label: n })), -1, (v) => this.app.forest.jumpToSeason(Number(v)), def.label)));
+      } else if (def.stepper) {
         body.append(stepper(def.label, () => noteName(g.root), (d) => { g.root = Math.max(def.min, Math.min(def.max, g.root + d)); this.app.changed(); this.renderTree(); }));
       } else if (def.seg) {
+        const value = def.bool ? (g[def.key] ? 'On' : 'Off') : g[def.key];
         body.append(el('div', { class: 'row row-wide' }, el('span', { class: 'lbl', text: def.label }),
-          seg(def.options.map((o) => ({ value: o, label: String(o) })), g[def.key], (v) => { g[def.key] = Number(v); this.app.resizeColumns(Number(v)); this.app.changed(); }, def.label)));
+          seg(def.options.map((o) => ({ value: o, label: String(o) })), value, (v) => {
+            if (def.bool) {
+              g[def.key] = v === 'On';
+              if (def.key === 'seasons') this.app.seasonsChanged();
+              this.fillForest(body);
+            } else {
+              g[def.key] = Number(v);
+              if (def.key === 'columns') this.app.resizeColumns(Number(v));
+            }
+            this.app.changed();
+          }, def.label)));
       } else if (def.options) {
         const id = 'g-' + def.key;
         const s = el('select', { id });
@@ -479,6 +510,27 @@ export class UI {
         body.append(row(def, g, (key) => { if (key === 'temp') { this.drawSparks(); this.drawEnvelope(); } this.app.changed(); }));
       }
     }
+  }
+
+  // ---------- recordings ----------
+  renderTakes(takes) {
+    const box = document.getElementById('takes');
+    box.innerHTML = '';
+    box.hidden = !takes.length;
+    const framed = window.self !== window.top;
+    takes.forEach((t) => {
+      const lib = LIBRARY[this.state.slots[this.selected].type] || LIBRARY.linden;
+      const msg = el('p', { class: 'note', role: 'status' });
+      box.append(el('div', { class: 'take' },
+        el('div', { class: 'take-head' }, el('b', { text: t.name }), el('span', { text: `${t.seconds.toFixed(1)} s` })),
+        el('audio', { controls: true, src: t.url, preload: 'metadata' }),
+        el('div', { class: 'take-actions' },
+          el('button', { class: 'btn-ink', text: 'Save', onclick: async () => { msg.textContent = await this.app.saveTake(t); } }),
+          el('button', { text: `Use as ${lib.name} sound`, title: 'Feed this recording back in as the selected tree’s Sample engine', onclick: async () => { await this.app.useTake(t, this.selected); this.renderTree(); msg.textContent = `${lib.name} now plays this recording.`; } }),
+          el('button', { text: 'Delete', onclick: () => this.app.deleteTake(t) })),
+        framed ? el('p', { class: 'note', text: 'Saving files is blocked in this preview. It works in the app and on the test page.' }) : null,
+        msg));
+    });
   }
 
   // ---------- presets ----------
