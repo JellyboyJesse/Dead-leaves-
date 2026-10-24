@@ -1,0 +1,8 @@
+{
+  "appId": "com.leaffall.app",
+  "appName": "Leaf Fall",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

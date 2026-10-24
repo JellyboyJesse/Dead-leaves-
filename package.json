@@ -1,0 +1,16 @@
+{
+  "name": "leaf-fall",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A wind-driven sequencer where falling leaves play notes shaped by how each species decays.",
+  "scripts": {
+    "serve": "npx --yes http-server www -p 8080 -c-1"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.2.1",
+    "@capacitor/core": "6.2.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "6.2.1"
+  }
+}
