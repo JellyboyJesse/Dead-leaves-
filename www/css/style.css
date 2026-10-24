@@ -12,11 +12,11 @@
   --rain: rgba(80, 120, 170, 0.55);
   --danger: #A33A2A;
   --radius: 10px;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #14130F;
     --surface: #1D1B16;
     --ink: #ECE6D8;
@@ -29,22 +29,39 @@
     --twig: #7C705F;
     --rain: rgba(150, 180, 220, 0.5);
     --danger: #E08672;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+    --bg: #14130F;
+    --surface: #1D1B16;
+    --ink: #ECE6D8;
+    --muted: #9A9283;
+    --line: rgba(236, 230, 216, 0.12);
+    --line-strong: rgba(236, 230, 216, 0.28);
+    --accent: #7FAF85;
+    --accent-ink: #10140F;
+    --ground: #6E5A42;
+    --twig: #7C705F;
+    --rain: rgba(150, 180, 220, 0.5);
+    --danger: #E08672;
+    color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
 body {
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px);
   -webkit-tap-highlight-color: transparent;
 }
 
-.top { max-width: 640px; margin: 0 auto; padding: 14px 16px 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.top { max-width: 640px; margin: 0 auto; padding-block: 14px 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 h1 { font: 500 22px/1.2 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; margin: 0; letter-spacing: 0.01em; }
 .status { margin: 0; font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 
-.wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 32px; }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 0 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
 .scene-wrap { border-radius: 14px; background: var(--surface); border: 0.5px solid var(--line); overflow: hidden; }
 #scene { display: block; width: 100%; height: 300px; touch-action: manipulation; cursor: pointer; }
@@ -118,3 +135,5 @@ textarea { font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; resize: vert
 .preset-row input { flex: 1; }
 
 .foot { margin-top: 20px; font-size: 12px; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) { .cursor-row i { transition: none; } }

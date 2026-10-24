@@ -38,6 +38,7 @@ export class Scene {
     this.readTheme();
     const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
     if (mq && mq.addEventListener) mq.addEventListener('change', () => this.readTheme());
+    new MutationObserver(() => this.readTheme()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
 
   readTheme() {
